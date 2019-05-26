@@ -3,5 +3,4 @@ The script allow to post collected data into Elasticsearchfter and build visuali
 Just run the docker_compose from my github account to build Elasticsearch ENV.
 Add a Linux service with systemd to start the monitor script at startup. 
 
-https://github.com/maks200179/monitor/blob/master/Kibana.bmp
 ![Kibana Screenshot](https://github.com/maks200179/monitor/blob/master/Kibana.bmp)
