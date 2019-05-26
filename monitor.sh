@@ -22,6 +22,13 @@ else
     exit 1
 
 fi
+jq_version=$(jq --version)
+if [[ -z $jq_version ]] ; then 
+    echo "jq not installed"
+    exit 1
+fi    
+
+
 
 #Start to collect host data from here 
     # Check if connected to Internet or not
@@ -197,6 +204,8 @@ EOF
         for docker  in ${getalldockersname[@]} ; do
             
             get_docker_memory=$(echo  "$getalldockers" | grep "$docker" | awk '{print $8}' | sed 's/.$//' )
+            
+            #in case no data , reason old docker version , use other command  
             if [[ -z ${get_docker_memory} ]] ; then
                 get_docker_memory=$(echo  "$getalldockers" | grep "$docker" | awk '{print $6}' | sed 's/.$//' )
             fi  
