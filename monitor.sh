@@ -23,7 +23,7 @@ else
 
 fi
 jq_version=$(jq --version)
-if [[ -z $jq_version ]] ; then 
+if [[ -z ${jq_version} ]] ; then 
     echo "jq not installed"
     exit 1
 fi    
