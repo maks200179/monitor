@@ -23,15 +23,15 @@ else
 
 fi
 
-#host_data_here
-        # Check if connected to Internet or not
-        internet=$(domainConnection google.com)
+#Start to collect host data from here 
+    # Check if connected to Internet or not
+    internet=$(domainConnection google.com)
 
-        # Check Internal IP
-        internalip=$(hostname -i)
+    # Check Internal IP
+    internalip=$(hostname -i)
 
-        # Check External IP
-        externalip=$(curl -s ipecho.net/plain;echo)
+    # Check External IP
+    externalip=$(curl -s ipecho.net/plain;echo)
 
 
 
@@ -41,79 +41,61 @@ count_only_once=0
 counter=0
 
 get_request_ips(){
-        local date_tooday=$(date "+%d/%b/%Y")
-        local condidate=$(docker exec proxyserver cat /var/log/nginx/access.log | grep "${date_tooday}" |  grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" |  sort | uniq -c | sort -n | tail -n 5  )
-        local get_ip_pool=$(echo  "$condidate" | awk '{print $2}')
+    local date_tooday=$(date "+%d/%b/%Y")
+    local condidate=$(docker exec proxyserver cat /var/log/nginx/access.log | grep "${date_tooday}" |  grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" |  sort | uniq -c | sort -n | tail -n 5  )
+    local get_ip_pool=$(echo  "$condidate" | awk '{print $2}')
         
-            for ipaddr  in ${get_ip_pool[@]} ; do
-                validate_ip=`valid_ip $ipaddr`
-                #echo "$validate_ip"
-                if [[ $validate_ip == "valid"* ]] ; then
-                    counter=$((counter+1))                      
-                    get_counted_per_ip=$(echo "$condidate" | grep "${ipaddr}" | awk '{print $1}')
-                    local data=$(get_geo_ip  ${ipaddr} ${get_counted_per_ip})
-                    local data_json=$(cat <<EOF
+    for ipaddr  in ${get_ip_pool[@]} ; do
+        validate_ip=`valid_ip $ipaddr`
+        #echo "$validate_ip"
+        if [[ $validate_ip == "valid"* ]] ; then
+            counter=$((counter+1))                      
+            get_counted_per_ip=$(echo "$condidate" | grep "${ipaddr}" | awk '{print $1}')
+            local data=$(get_geo_ip  ${ipaddr} ${get_counted_per_ip})
+            local data_json=$(cat <<EOF
 , "Geo_data_per_ip $externalip $counter":"City_Counry_Region_ip_counter $data"
 EOF
 )
-                    local para+=$(cat <<EOF
+            local para+=$(cat <<EOF
 $data_json
 EOF
 )
-                    
-                fi  
-                
-            done
-        echo $para  
-        counter=0           
-        
+        fi  
+    done
+    counter=0           
 }
 
-function valid_ip()
-{
+function valid_ip() {
     local  ip_str=$1
     local rx='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
-
     if [[ $ip_str =~ ^$rx\.$rx\.$rx\.$rx$ ]]; then
         echo "valid:     "$ip_str
     else
       echo "not valid: "$ip_str
     fi
-
     return 0
 }
 
-
-
-
 get_geo_ip(){
 
-        PUBLIC_IP=$1
-        counted=$2
-        
-        curl -s https://ipinfo.io/${PUBLIC_IP} | \
-                jq '.city, .country , .region ' | tr -d '"' |   \
-                while read -r CITY ; do
-                        
-                        read -r COUNTRY 
-                        #read -r CITY
-                        read -r REGION  
-                        #
-                        if [[ ${CITY} == "" ]] ; then 
-                            CITY="no_data"
-                        fi  
-                        if [[ ${COUNTRY} == "" ]] ; then 
-                            COUNTRY="no_data"
-                        fi
-                        if [[ ${REGION} == "" ]] ; then 
-                            REGION="no_data"
-                        fi
-                        
-                        echo "${CITY} ${COUNTRY} ${PUBLIC_IP} ${counted}" 
-                        
+    PUBLIC_IP=$1
+    counted=$2
+    curl -s https://ipinfo.io/${PUBLIC_IP} | \
+        jq '.city, .country , .region ' | tr -d '"' |   \
+            while read -r CITY ; do
+                read -r COUNTRY 
+                read -r REGION  
+                if [[ ${CITY} == "" ]] ; then 
+                    CITY="no_data"
+                fi  
+                if [[ ${COUNTRY} == "" ]] ; then 
+                    COUNTRY="no_data"
+                fi
+                if [[ ${REGION} == "" ]] ; then 
+                    REGION="no_data"
+                fi
+                echo "${CITY} ${COUNTRY} ${PUBLIC_IP} ${counted}" 
                 done
-        
-
 }
 
 
