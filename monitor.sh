@@ -1,6 +1,7 @@
 #!/bin/bash
 #set -x
 
+#check host connected to internet or not. 
 function domainConnection() {
     local domain=$1
  
@@ -14,13 +15,14 @@ function domainConnection() {
     return 0
 }    
 
-
+# check if wget installed 
 if [[  -f /usr/bin/wget ]] ; then
     echo "wget ok"
 else 
     echo "wget not installed"
     exit 1
 
+# check jq installed
 fi
 jq_version=$(jq --version)
 if [[ -z ${jq_version} ]] ; then 
@@ -47,6 +49,7 @@ fi
 count_only_once=0
 counter=0
 
+# parse nginx log check connections once per day and count acsess per ip
 get_request_ips(){
     local date_tooday=$(date "+%d/%b/%Y")
     local condidate=$(docker exec proxyserver cat /var/log/nginx/access.log | grep "${date_tooday}" |  grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" |  sort | uniq -c | sort -n | tail -n 5  )
@@ -72,6 +75,7 @@ EOF
     counter=0           
 }
 
+#make sure ip is own valid pattern
 function valid_ip() {
     local  ip_str=$1
     local rx='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
@@ -83,6 +87,8 @@ function valid_ip() {
     return 0
 }
 
+
+# check geo position
 get_geo_ip(){
 
     PUBLIC_IP=$1
@@ -106,6 +112,7 @@ get_geo_ip(){
 }
 
 
+#run nginx log parser once and set time when its will be running 
 time_to_parse_log() {
         local state=$1
     local H=$(date +%H)
@@ -134,7 +141,7 @@ while true; do
         
 
 
-# Check RAM , Disk , and load avg  Usages on host server 
+# Check RAM , Disk , and load avg   on host server 
         availablemem=$(free -h | awk '/^Mem/ {print $7}'| sed 's/.$//' )
         usedmem=$(free -h | awk '/^Mem/ {print $3}' | sed 's/.$//' )
         totalmem=$(free -h | awk '/^Mem/ {print $2}' | sed 's/.$//' )
@@ -160,7 +167,6 @@ EOF
 
 
 #nginx log parser by geo ip count all connections and show geo position
-         
         run_parser=$(time_to_parse_log ${count_only_once})
         if [[ $run_parser == "true_run" ]] ; then
             get_ip_info=$(get_request_ips)
@@ -175,6 +181,7 @@ EOF
 $get_ip_info
 EOF
 )
+
 #Post to elasticsearch nginx log info 
 
         echo {${params_2}} > /tmp/bx2 
