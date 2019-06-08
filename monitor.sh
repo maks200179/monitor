@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-#check host connected to internet or not. 
+#check if host connected to internet or not. 
 function domainConnection() {
     local domain=$1
  
